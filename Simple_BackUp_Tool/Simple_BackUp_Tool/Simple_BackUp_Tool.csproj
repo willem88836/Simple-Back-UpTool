@@ -50,12 +50,24 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <XamlAppDef Include="Workflow1.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </XamlAppDef>
+    <Compile Include="src\BackUp.cs" />
+    <Compile Include="src\BackUpSettings.cs" />
+    <Compile Include="src\Framework\Features\JSON\Json.cs" />
+    <Compile Include="src\Framework\Features\JSON\JsonIgnore.cs" />
+    <Compile Include="src\Framework\Features\Storage\FileEncryption.cs" />
+    <Compile Include="src\Framework\Features\Storage\SaveLoad.cs" />
+    <Compile Include="src\Framework\Features\Storage\SimpleZipper.cs" />
+    <Compile Include="src\Framework\Interfaces\ISavable.cs" />
+    <Compile Include="src\Framework\Interfaces\ISelectable.cs" />
+    <Compile Include="src\Framework\Utilities\ActionUtilities.cs" />
+    <Compile Include="src\Framework\Utilities\ArrayUtilities.cs" />
+    <Compile Include="src\Framework\Utilities\DirectoryUtilities.cs" />
+    <Compile Include="src\Framework\Utilities\LoggingUtilities.cs" />
+    <Compile Include="src\Framework\Utilities\ObjectUtilities.cs" />
+    <Compile Include="src\Framework\Utilities\StringUtilities.cs" />
+    <Compile Include="src\Framework\Utilities\TypeUtilities.cs" />
+    <Compile Include="src\OverWriteState.cs" />
+    <Compile Include="src\Settings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

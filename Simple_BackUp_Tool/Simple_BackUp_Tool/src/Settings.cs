@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.ServiceModel.Channels;
 using Framework.Features.Json;
 using Framework.Utils;
 
@@ -12,20 +14,23 @@ public class Settings
 	private static Settings singleton;
 	private static BackUpSettings loaded;
 
-
 	public Settings()
 	{
 		if (singleton != null)
 		{
-			throw new Exception("Duplicate Singleton");
+			throw new Exception("Duplicate Settings Singleton");
 		}
 
 		singleton = this;
 	}
 
-
 	public BackUpSettings Load()
 	{
+		if (!Directory.Exists(SettingsPath))
+		{
+			Directory.CreateDirectory(SettingsPath);
+		}
+
 		string[] files = Directory.GetFiles(SettingsPath);
 
 		string settingsPath = "";
@@ -71,8 +76,8 @@ public class Settings
 
 		// loads selected settings.
 		string json = File.ReadAllText(settingsPath);
-		LoggingUtilities.LogFormat("Loaded Settings: ({0})\n", json);
 		loaded = JsonUtility.FromJson<BackUpSettings>(json);
+		LoggingUtilities.LogFormat("Loaded Settings: ({0})\n", json);
 		return loaded;
 	}
 
@@ -88,9 +93,39 @@ public class Settings
 		FieldInfo[] fields = typeof(BackUpSettings).GetFields().Where(info => info.GetCustomAttribute(typeof(JsonIgnore)) == null && !info.IsLiteral).ToArray();
 		foreach (FieldInfo field in fields)
 		{
-			Console.WriteLine(field.Name + ": ");
-			object input = Convert.ChangeType(Console.ReadLine(), field.DeclaringType);
-			field.SetValue(settings, input);
+			if (field.FieldType.IsArray)
+			{
+				// TODO: Make this more generic.
+				List<string> elements = new List<string>();
+				while(true)
+				{
+					Console.WriteLine(field.Name + " element: ");
+					string input = Console.ReadLine();
+					if (input == "x")
+					{
+						break;
+					}
+					object element = Convert.ChangeType(input, field.FieldType.GetElementType());
+					elements.Add(input);
+
+				}
+				field.SetValue(settings, elements.ToArray());
+			}
+			else
+			{
+				Console.WriteLine(field.Name + ": ");
+				object input = null;
+				if (field.FieldType.IsEnum)
+				{
+					input = Enum.Parse(field.FieldType, Console.ReadLine());
+				}
+				else
+				{
+					input = Convert.ChangeType(Console.ReadLine(), field.FieldType);
+				}
+
+				field.SetValue(settings, input);
+			}
 		}
 
 		string json = JsonUtility.ToJson(settings);
@@ -98,6 +133,7 @@ public class Settings
 		Console.WriteLine("File Name: ");
 		string fileName = Console.ReadLine();
 		fileName = Path.Combine(SettingsPath, fileName);
+		fileName = Path.ChangeExtension(fileName, "json");
 
 		File.WriteAllText(fileName, json);
 

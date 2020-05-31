@@ -1,9 +1,17 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Framework.Utils
 {
 	public static class LoggingUtilities
 	{
+		private static string appdataRoot = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+		public static void SetAppDataRoot(string root)
+		{
+			LoggingUtilities.appdataRoot = root;
+		}
+
 		/// <summary>
 		///		Logs a message into the 
 		///		UnityEngine.Debug.Log(),
@@ -16,10 +24,15 @@ namespace Framework.Utils
 			UnityEngine.Debug.Log(message);
 #endif
 
-			string logPath = Path.Combine(SimpleBackUp.Program.AppDataRoot, "log.txt");
+			string logPath = Path.Combine(appdataRoot, "log.txt");
 			if (!File.Exists(logPath))
 			{
-				File.Create(logPath);
+				if (!Directory.Exists(appdataRoot))
+				{
+					Directory.CreateDirectory(appdataRoot);
+				}
+				FileStream stream = File.Create(logPath);
+				stream.Close();
 			}
 
 			File.AppendAllText(logPath, message);

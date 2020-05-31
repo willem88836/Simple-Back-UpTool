@@ -1,54 +1,66 @@
 using System;
-using SimpleBackUp.src;
 using Framework.Utils;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 public class Program
 {
-	[DllImport("kernel32.dll")]
-	static extern IntPtr GetConsoleWindow();
+	//[DllImport("kernel32.dll")]
+	//static extern IntPtr GetConsoleWindow();
 
-	[DllImport("user32.dll")]
-	static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+	//[DllImport("user32.dll")]
+	//static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-	const int SW_HIDE = 0;
-	const int SW_SHOW = 5;
+	//const int SW_HIDE = 0;
+	//const int SW_SHOW = 5;
 
-	private static IntPtr window;
+	//private static IntPtr window;
+
+
+	private static Program program;
+	private Settings settings;
+	private BackUp backUp;
+
 
 
 	public static string AppDataRoot { get { 
 			return Path.Combine(
 				Environment.GetFolderPath(
 					Environment.SpecialFolder.ApplicationData), 
-					"AFB"); 
+					"Simple_Back_Up"); 
 		} 
 	}
 
-
-	private static BackUp backUp;
-
 	static void Main(string[] args)
 	{
+		program = new Program();
+	}
+
+
+	public Program()
+	{
+		LoggingUtilities.SetAppDataRoot(AppDataRoot);
 		try
 		{
 			LoggingUtilities.LogFormat("\nInitiating AFB ({0})\n", DateTime.Now.ToString());
 
-			Settings.Load();
-			window = GetConsoleWindow();
-			ShowWindow(window, SW_HIDE);
+			settings = new Settings();
+			settings.Load();
+
 			backUp = new BackUp();
-			Settings.Store();
+			//backUp.Start(settings);
 		}
-		catch(Exception e)
+		catch (Exception e)
 		{
 			LoggingUtilities.Log("ERROR\n");
-			LoggingUtilities.Log(e.StackTrace);
+			LoggingUtilities.Log(e.StackTrace + "\n");
 			LoggingUtilities.Log(e.Message + "\n");
 			LoggingUtilities.Log(e.Data.ToString() + "\n");
 
-			Console.Beep(800, 500);
+			Console.Beep(200, 500);
+			Console.Beep(200, 500);
+			Console.Beep(200, 500);
 		}
 
 		Console.Beep(400, 500);
@@ -56,13 +68,12 @@ public class Program
 	}
 
 
+
 	public static string RequestInput(string request)
 	{
 		Console.Clear();
-		ShowWindow(window, SW_SHOW);
 		Console.WriteLine(request);
 		string input = Console.ReadLine();
-		ShowWindow(window, SW_HIDE);
 		return input.ToLower();
 	}
 
