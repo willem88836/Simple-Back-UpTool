@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 public class BackUp
 {
@@ -32,10 +33,38 @@ public class BackUp
 		}
 
 		// TODO: when two origin folders have the same name all non-first ones are removed here because the names don't match the original. 
+		Thread t = StartLoadingIcon();
 		RemoveAbandonedFiles();
 		CreateBackUp();
+		t.Abort();
 	}
 
+	/// <summary>
+	///		Does it help at all? Not really.. 
+	///		Does it soothe the mind while waiting? yes!
+	/// </summary>
+	private Thread StartLoadingIcon()
+	{
+		Thread t = new Thread(() =>
+		{
+			int i = 0; 
+			while (true)
+			{
+				i++;
+				i %= 5;
+				string l = "Backing Up All The Things";
+				for (int j = 0; j < i; j++)
+				{
+					l += ".";
+				}
+				Console.Clear();
+				Console.Write(l);
+			}
+		});
+
+		t.Start();
+		return t;
+	}
 
 	/// <summary>
 	///		Removes all files that no longer are. 
@@ -95,14 +124,14 @@ public class BackUp
 			{
 				// recursively deletes all files within folder. 
 				DirectoryUtilities.ReversedForeachFolderIn(childPath, (string f) =>
-			{
-				DirectoryUtilities.ReversedForeachFileAt(f, (FileInfo i) =>
 				{
-					File.SetAttributes(i.FullName, FileAttributes.Normal);
-					File.Delete(i.FullName);
+					DirectoryUtilities.ReversedForeachFileAt(f, (FileInfo i) =>
+					{
+						File.SetAttributes(i.FullName, FileAttributes.Normal);
+						File.Delete(i.FullName);
+					});
+					Directory.Delete(f);
 				});
-				Directory.Delete(f);
-			});
 			}
 			else
 			{
