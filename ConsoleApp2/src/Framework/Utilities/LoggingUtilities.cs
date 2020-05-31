@@ -16,7 +16,7 @@ namespace Framework.Utils
 			UnityEngine.Debug.Log(message);
 #endif
 
-			string logPath = Path.Combine(ConsoleApp2.Program.AppDataRoot, "log.txt");
+			string logPath = Path.Combine(SimpleBackUp.Program.AppDataRoot, "log.txt");
 			if (!File.Exists(logPath))
 			{
 				File.Create(logPath);
