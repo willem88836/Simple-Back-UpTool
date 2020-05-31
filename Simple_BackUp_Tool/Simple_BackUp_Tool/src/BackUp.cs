@@ -59,6 +59,7 @@ public class BackUp
 				}
 				Console.Clear();
 				Console.Write(l);
+				Thread.Sleep(1000);
 			}
 		});
 
