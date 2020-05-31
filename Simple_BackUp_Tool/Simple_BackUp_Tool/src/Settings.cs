@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.ServiceModel.Channels;
 using Framework.Features.Json;
 using Framework.Utils;
 
@@ -12,7 +11,7 @@ public class Settings
 	public static string SettingsPath { get { return Path.Combine(Program.AppDataRoot, "settings"); } }
 
 	private static Settings singleton;
-	private static BackUpSettings loaded;
+	public BackUpSettings LoadedSettings { get; private set; }
 
 	public Settings()
 	{
@@ -39,7 +38,7 @@ public class Settings
 		// based on whether settings exist. 
 		if (files == null || files.Length == 0)
 		{
-			LoggingUtilities.Log("No prior settings found, creating new settings");
+			LoggingUtilities.Log("No prior settings found, creating new settings.\n");
 			settingsPath = CreateSettings();
 		}
 		else
@@ -56,7 +55,7 @@ public class Settings
 			// Gives user the option to create new settings.
 			if (input.Key == ConsoleKey.N)
 			{
-				LoggingUtilities.Log("User wants to create new settings.");
+				LoggingUtilities.Log("User wants to create new settings.\n");
 				settingsPath = CreateSettings();
 			}
 			else
@@ -69,16 +68,16 @@ public class Settings
 				}
 				else
 				{
-					throw new Exception("Unexpected input");
+					throw new ArgumentException(String.Format("Can't Parse Input ({0}) to integer", c));
 				}
 			}
 		}
 
 		// loads selected settings.
 		string json = File.ReadAllText(settingsPath);
-		loaded = JsonUtility.FromJson<BackUpSettings>(json);
+		LoadedSettings = JsonUtility.FromJson<BackUpSettings>(json);
 		LoggingUtilities.LogFormat("Loaded Settings: ({0})\n", json);
-		return loaded;
+		return LoadedSettings;
 	}
 
 	/// <summary>

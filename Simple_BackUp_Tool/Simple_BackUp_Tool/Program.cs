@@ -6,18 +6,6 @@ using System.Runtime.CompilerServices;
 
 public class Program
 {
-	//[DllImport("kernel32.dll")]
-	//static extern IntPtr GetConsoleWindow();
-
-	//[DllImport("user32.dll")]
-	//static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-	//const int SW_HIDE = 0;
-	//const int SW_SHOW = 5;
-
-	//private static IntPtr window;
-
-
 	private static Program program;
 	private Settings settings;
 	private BackUp backUp;
@@ -46,10 +34,10 @@ public class Program
 			LoggingUtilities.LogFormat("\nInitiating AFB ({0})\n", DateTime.Now.ToString());
 
 			settings = new Settings();
-			settings.Load();
+			BackUpSettings loadedSettings = settings.Load();
 
 			backUp = new BackUp();
-			//backUp.Start(settings);
+			backUp.Start(loadedSettings);
 		}
 		catch (Exception e)
 		{
