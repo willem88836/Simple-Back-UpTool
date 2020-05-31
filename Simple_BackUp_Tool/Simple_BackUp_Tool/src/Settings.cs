@@ -54,7 +54,7 @@ public class Settings
 			ConsoleKeyInfo input = Console.ReadKey();
 
 			// Gives user the option to create new settings.
-			if (input.Key == ConsoleKey.R)
+			if (input.Key == ConsoleKey.N)
 			{
 				LoggingUtilities.Log("User wants to create new settings.");
 				settingsPath = CreateSettings();
