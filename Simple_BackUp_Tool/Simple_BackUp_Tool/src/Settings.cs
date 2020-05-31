@@ -1,11 +1,12 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using Framework.Features.Json;
 using Framework.Utils;
 
 public class Settings
 {
-	private static readonly string defaultSettingsName = "settings.json";
 	public static string SettingsPath { get { return Path.Combine(Program.AppDataRoot, "settings"); } }
 
 	private static Settings singleton;
@@ -34,7 +35,7 @@ public class Settings
 		if (files == null || files.Length == 0)
 		{
 			LoggingUtilities.Log("No prior settings found, creating new settings");
-			settingsPath = CreateNewSettings();
+			settingsPath = CreateSettings();
 		}
 		else
 		{
@@ -51,7 +52,7 @@ public class Settings
 			if (input.Key == ConsoleKey.R)
 			{
 				LoggingUtilities.Log("User wants to create new settings.");
-				settingsPath = CreateNewSettings();
+				settingsPath = CreateSettings();
 			}
 			else
 			{
@@ -80,14 +81,26 @@ public class Settings
 	/// </summary>
 	private string CreateSettings()
 	{
-		//TODO create JSONBuilder from Console.
-		throw new NotImplementedException();
-	}
+		Console.WriteLine("Fill in Settings: ");
 
+		BackUpSettings settings = new BackUpSettings();
 
-	public static void Store()
-	{
-		string newJson = JsonUtility.ToJson(Instance);
-		File.WriteAllText(SettingsPath, newJson);
+		FieldInfo[] fields = typeof(BackUpSettings).GetFields().Where(info => info.GetCustomAttribute(typeof(JsonIgnore)) == null && !info.IsLiteral).ToArray();
+		foreach (FieldInfo field in fields)
+		{
+			Console.WriteLine(field.Name + ": ");
+			object input = Convert.ChangeType(Console.ReadLine(), field.DeclaringType);
+			field.SetValue(settings, input);
+		}
+
+		string json = JsonUtility.ToJson(settings);
+
+		Console.WriteLine("File Name: ");
+		string fileName = Console.ReadLine();
+		fileName = Path.Combine(SettingsPath, fileName);
+
+		File.WriteAllText(fileName, json);
+
+		return fileName;
 	}
 }
