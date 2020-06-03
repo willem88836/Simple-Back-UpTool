@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Framework.Features.Json;
+using SimpleJsonLibrary;
 using Framework.Utils;
 
 public class Settings
