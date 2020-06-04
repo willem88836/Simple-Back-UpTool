@@ -169,6 +169,8 @@ public class BackUp
 			// if it's the same file, but a different version.
 			if (File.Exists(targetPath) && file.LastWriteTime != File.GetLastWriteTime(targetPath))
 			{
+				LoggingUtilities.LogFormat("DUPLICATE FILE: {0}\n", targetPath);
+
 				bool overwrite = overwriteState == ActionState.Yes;
 				if (overwriteState == ActionState.Unset)
 				{
@@ -177,8 +179,11 @@ public class BackUp
 
 				if (!overwrite)
 				{
+					LoggingUtilities.LogFormat("Skipped\n");
 					return;
 				}
+
+				LoggingUtilities.LogFormat("Overwritten\n");
 			}
 
 			try
@@ -187,15 +192,16 @@ public class BackUp
 			}
 			catch (Exception e)
 			{
+				LoggingUtilities.LogFormat("ERROR: {0}\n", e.Message);
 				bool skip = skipState == ActionState.Yes;
 				if (skipState == ActionState.Unset)
 				{
-					LoggingUtilities.LogFormat("ERROR: {0}\n", e.Message);
 					skip = RequestActionState(ref skipState, string.Format("Can't reach file due to error ({0}). Skip", e.Message), targetPath);
 				}
 
 				if (skip)
 				{
+					LoggingUtilities.Log("Skipped\n");
 					return;
 				}
 			}
