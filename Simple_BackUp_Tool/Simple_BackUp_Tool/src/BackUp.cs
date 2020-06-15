@@ -34,9 +34,16 @@ public class BackUp
 
 		// TODO: when two origin folders have the same name all non-first ones are removed here because the names don't match the original. 
 		Thread t = StartLoadingIcon();
-		RemoveAbandonedFiles();
-		CreateBackUp();
-		t.Abort();
+
+		try
+		{
+			RemoveAbandonedFiles();
+			CreateBackUp();
+		}
+		finally
+		{
+			t.Abort();
+		}
 	}
 
 	/// <summary>
@@ -50,15 +57,16 @@ public class BackUp
 			int i = 0; 
 			while (true)
 			{
-				i++;
 				i %= 5;
-				string l = "Backing Up All The Things";
-				for (int j = 0; j < i; j++)
+				if (i == 0)
 				{
-					l += ".";
+					Console.Clear();
+					Console.Write("Backing Up All The Things");
 				}
-				Console.Clear();
-				Console.Write(l);
+
+				i++;
+				Console.Write(".");
+
 				Thread.Sleep(1000);
 			}
 		});
@@ -192,7 +200,7 @@ public class BackUp
 			}
 			catch (Exception e)
 			{
-				LoggingUtilities.LogFormat("ERROR: {0}\n", e.Message);
+				LoggingUtilities.LogFormat("ERROR: {0} | {1}\n", e.GetType(), e.Message);
 				bool skip = skipState == ActionState.Yes;
 				if (skipState == ActionState.Unset)
 				{
