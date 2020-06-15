@@ -23,58 +23,26 @@ namespace SimpleBackUpTool
 			}
 
 			singleton = this;
-		}
 
-		public BackUpSettings Load()
-		{
+
 			if (!Directory.Exists(SettingsPath))
 			{
 				Directory.CreateDirectory(SettingsPath);
 			}
+		}
 
-			string[] files = Directory.GetFiles(SettingsPath);
-
-			string settingsPath = "";
-
-			// Creates new settings or initializes selection sreen
-			// based on whether settings exist. 
-			if (files == null || files.Length == 0)
+		
+		public string[] UserSettings
+		{
+			get
 			{
-				LoggingUtilities.Log("No prior settings found, creating new settings.\n");
-				settingsPath = CreateSettings();
+				return Directory.GetFiles(SettingsPath);
 			}
-			else
-			{
-				Console.WriteLine("Select Settings: ");
-				for(int i = 0; i < files.Length; i++)
-				{
-					Console.WriteLine(i + ") " + Path.GetFileNameWithoutExtension(files[i]));
-				}
-				Console.WriteLine("n) create new settings");
+		}
 
-				ConsoleKeyInfo input = Console.ReadKey();
 
-				// Gives user the option to create new settings.
-				if (input.Key == ConsoleKey.N)
-				{
-					LoggingUtilities.Log("User wants to create new settings.\n");
-					settingsPath = CreateSettings();
-				}
-				else
-				{
-					string c = input.KeyChar.ToString();
-					int i = 0;
-					if (int.TryParse(c, out i))
-					{
-						settingsPath = files[i];
-					}
-					else
-					{
-						throw new ArgumentException(String.Format("Can't Parse Input ({0}) to integer", c));
-					}
-				}
-			}
-
+		public BackUpSettings Load(string settingsPath)
+		{
 			// loads selected settings.
 			string json = File.ReadAllText(settingsPath);
 			LoadedSettings = JsonUtility.FromJson<BackUpSettings>(json);

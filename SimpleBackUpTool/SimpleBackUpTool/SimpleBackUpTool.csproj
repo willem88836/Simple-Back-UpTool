@@ -32,6 +32,13 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>BeeIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Win32Resource>
+    </Win32Resource>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="SimpleJsonLibrary">
       <HintPath>dll\SimpleJsonLibrary.dll</HintPath>
@@ -60,6 +67,7 @@
     <Compile Include="src\ActionState.cs" />
     <Compile Include="src\BackUp.cs" />
     <Compile Include="src\BackUpSettings.cs" />
+    <Compile Include="src\BackUpProgram.cs" />
     <Compile Include="src\Framework\Features\Storage\FileEncryption.cs" />
     <Compile Include="src\Framework\Features\Storage\SaveLoad.cs" />
     <Compile Include="src\Framework\Features\Storage\SimpleZipper.cs" />
@@ -97,6 +105,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="BeeIcon.ico" />
     <Content Include="resources\BeeIcon.ico" />
   </ItemGroup>
   <ItemGroup>

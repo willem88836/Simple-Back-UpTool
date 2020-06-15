@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 
 namespace SimpleBackUpTool
 {
@@ -18,7 +17,6 @@ namespace SimpleBackUpTool
 			this.settings = settings;
 			this.overwriteState = settings.DefaultOverwriteState;
 			this.skipState = settings.DefaultSkipState;
-			Console.Clear();
 
 			if (!Directory.Exists(settings.TargetDirectory))
 			{
@@ -34,47 +32,10 @@ namespace SimpleBackUpTool
 				}
 			}
 
-			// TODO: when two origin folders have the same name all non-first ones are removed here because the names don't match the original. 
-			Thread t = StartLoadingIcon();
+			// TODO: when two origin folders have the same name all non-first ones are removed here because the names don't match the original.
 
-			try
-			{
-				RemoveAbandonedFiles();
-				CreateBackUp();
-			}
-			finally
-			{
-				t.Abort();
-			}
-		}
-
-		/// <summary>
-		///		Does it help at all? Not really.. 
-		///		Does it soothe the mind while waiting? yes!
-		/// </summary>
-		private Thread StartLoadingIcon()
-		{
-			Thread t = new Thread(() =>
-			{
-				int i = 0; 
-				while (true)
-				{
-					i %= 5;
-					if (i == 0)
-					{
-						Console.Clear();
-						Console.Write("Backing Up All The Things");
-					}
-
-					i++;
-					Console.Write(".");
-
-					Thread.Sleep(1000);
-				}
-			});
-
-			t.Start();
-			return t;
+			RemoveAbandonedFiles();
+			CreateBackUp();
 		}
 
 		/// <summary>
