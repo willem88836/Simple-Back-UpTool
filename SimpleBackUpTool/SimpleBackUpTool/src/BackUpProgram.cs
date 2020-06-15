@@ -1,13 +1,14 @@
 ﻿using Framework.Utils;
 using System;
+using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace SimpleBackUpTool
 {
     public class BackUpProgram : ApplicationContext
     {
+        public static BackUpProgram Instance;
         private Settings settings;
         private BackUp backUp;
         private NotifyIcon trayIcon;
@@ -23,16 +24,38 @@ namespace SimpleBackUpTool
             }
         }
 
+
         public BackUpProgram()
         {
+            if (Instance != null)
+            {
+                throw new Exception("Duplicate Settings Singleton");
+            }
+
+            Instance = this;
             settings = new Settings();
 
-            ContextMenu contextMenu = new ContextMenu(new MenuItem[] {
-                        new MenuItem("Exit", Exit),
-                        new MenuItem("Create New Profile", CreateNewBackUpSettings)
-                    });
+            // Initialize Tray Icon
+            trayIcon = new NotifyIcon()
+            {
+                // TODO: Animate icon when backing up? :D 
+                Icon = Properties.Resources.AppIcon,
+                Visible = true
+            };
 
-            foreach(string setting in settings.UserSettings)
+            Reloadmenu();
+        }
+       
+        private void Reloadmenu()
+        {
+            ContextMenu contextMenu = new ContextMenu(
+                new MenuItem[] {
+                    new MenuItem("Exit", Exit),
+                    new MenuItem("Open AppData", ShowAppData),
+                    new MenuItem("Create New Profile", CreateNewBackUpSettings)
+                });
+
+            foreach (string setting in settings.UserSettings)
             {
                 MenuItem item = new MenuItem(
                     "Profile: " + Path.GetFileNameWithoutExtension(setting),
@@ -41,22 +64,14 @@ namespace SimpleBackUpTool
                 contextMenu.MenuItems.Add(item);
             }
 
-
-            // Initialize Tray Icon
-            trayIcon = new NotifyIcon()
-            {
-                // TODO: Animate icon when backing up? :D 
-                Icon = Properties.Resources.AppIcon,
-                ContextMenu = contextMenu,
-                Visible = true
-            };
+            trayIcon.ContextMenu = contextMenu;
         }
+
 
         private void Exit(object sender, EventArgs e)
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
             trayIcon.Visible = false;
-
             Application.Exit();
         }
 
@@ -90,9 +105,13 @@ namespace SimpleBackUpTool
 
         private void CreateNewBackUpSettings(object sender, EventArgs e)
         {
-            Console.Beep(200, 500);
-            //TODO: Make a form or something for this.
-            MessageBox.Show("whatever");
+            Form1 form = new Form1(null);
+            form.Show();
+        }
+
+        private void ShowAppData(object sender, EventArgs e)
+        {
+            Process.Start(AppDataRoot);
         }
 
 
