@@ -124,6 +124,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="BeeIcon.ico" />
+    <Content Include="resources\bee1.ico" />
+    <Content Include="resources\bee2.ico" />
     <Content Include="resources\BeeIcon.ico" />
   </ItemGroup>
   <ItemGroup>

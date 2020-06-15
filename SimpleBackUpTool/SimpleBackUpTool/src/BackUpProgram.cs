@@ -1,7 +1,9 @@
 ﻿using Framework.Utils;
+using SimpleBackUpTool.Properties;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace SimpleBackUpTool
@@ -12,6 +14,7 @@ namespace SimpleBackUpTool
         private Settings settings;
         private BackUp backUp;
         private NotifyIcon trayIcon;
+        private Thread loadIconThread;
 
         public static string AppDataRoot
         {
@@ -80,6 +83,7 @@ namespace SimpleBackUpTool
             LoggingUtilities.SetAppDataRoot(AppDataRoot);
             try
             {
+                LoadingIcon();
                 LoggingUtilities.LogFormat("\nInitiating Simple Back-Up ({0})\n", DateTime.Now.ToString());
                 
                 BackUpSettings loadedSettings = settings.Load(userSettings);
@@ -98,6 +102,15 @@ namespace SimpleBackUpTool
                 Console.Beep(200, 500);
                 Console.Beep(200, 500);
             }
+            finally
+            {
+                if(loadIconThread != null)
+                {
+                    loadIconThread.Abort();
+                    loadIconThread = null;
+                    trayIcon.Icon = Resources.AppIcon;
+                }
+            }
 
             Console.Beep(400, 500);
             LoggingUtilities.LogFormat("Finished AFB ({0})\n", DateTime.Now.ToString());
@@ -112,6 +125,35 @@ namespace SimpleBackUpTool
         private void ShowAppData(object sender, EventArgs e)
         {
             Process.Start(AppDataRoot);
+        }
+
+
+        private void LoadingIcon()
+        {
+            loadIconThread = new Thread(() =>
+            {
+                int i = 0; 
+                while (true)
+                {
+                    i++;
+                    i %= 3;
+                    switch (i)
+                    {
+                        case 0:
+                            trayIcon.Icon = Resources.AppIcon;
+                            break;
+                        case 1:
+                            trayIcon.Icon = Resources.AppIcon1;
+                            break;
+                        case 2:
+                            trayIcon.Icon = Resources.AppIcon2;
+                            break;
+                    }
+                    Thread.Sleep(1000);
+                }
+            });
+
+            loadIconThread.Start();
         }
 
 
