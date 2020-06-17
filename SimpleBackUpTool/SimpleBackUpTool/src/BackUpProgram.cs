@@ -33,7 +33,7 @@ namespace SimpleBackUpTool
         {
             if (Instance != null)
             {
-                throw new Exception("Duplicate Settings Singleton");
+                throw new Exception("Duplicate BackUpProgram Singleton");
             }
 
             Instance = this;
@@ -42,7 +42,6 @@ namespace SimpleBackUpTool
             // Initialize Tray Icon
             trayIcon = new NotifyIcon()
             {
-                // TODO: Animate icon when backing up? :D 
                 Icon = Properties.Resources.AppIcon,
                 Visible = true
             };
