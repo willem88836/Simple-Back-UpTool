@@ -78,6 +78,7 @@ namespace SimpleBackUpTool
                 new MenuItem[]
                 {
                     new MenuItem("Exit", (sender, e) => {  StopBackUp(); Exit(sender, e); }),
+                    new MenuItem("Open AppData", ShowAppData),
                     new MenuItem("Stop Back-Up", (sender, e) => { StopBackUp(); Reloadmenu(); })
                 });
 
@@ -128,10 +129,12 @@ namespace SimpleBackUpTool
                         loadIconThread = null;
                         trayIcon.Icon = Resources.AppIcon;
                     }
-                }
 
-                Console.Beep(400, 500);
-                LoggingUtilities.LogFormat("Finished AFB ({0})\n", DateTime.Now.ToString());
+                    Reloadmenu();
+
+                    Console.Beep(400, 500);
+                    LoggingUtilities.LogFormat("Finished AFB ({0})\n", DateTime.Now.ToString());
+                }
             });
 
             backUpThread.Start();
@@ -142,6 +145,8 @@ namespace SimpleBackUpTool
             backUpThread.Abort();
             loadIconThread.Abort();
             trayIcon.Icon = Resources.AppIcon;
+            Reloadmenu();
+            LoggingUtilities.Log("INTERRUPTED BACK-UP\n");
         }
 
         private void CreateNewBackUpSettings(object sender, EventArgs e)
