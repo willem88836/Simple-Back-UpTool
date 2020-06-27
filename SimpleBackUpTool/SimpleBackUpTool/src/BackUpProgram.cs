@@ -132,7 +132,7 @@ namespace SimpleBackUpTool
                     Reloadmenu();
 
                     Console.Beep(400, 500);
-                    LoggingUtilities.LogFormat("Finished AFB ({0})\n", DateTime.Now.ToString());
+                    LoggingUtilities.LogFormat("Finished Simple Back-Up ({0})\n", DateTime.Now.ToString());
                 }
             });
 

@@ -96,6 +96,9 @@
     <Compile Include="src\Framework\Utilities\StringUtilities.cs" />
     <Compile Include="src\Framework\Utilities\TypeUtilities.cs" />
     <Compile Include="src\Settings.cs" />
+    <Compile Include="src\VirtualDirectory\VirtualDirectoryIterator.cs" />
+    <Compile Include="src\VirtualDirectory\VirtualDirectory.cs" />
+    <Compile Include="src\VirtualDirectory\VirtualDirectoryEntry.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
