@@ -82,7 +82,7 @@ namespace SimpleBackUpTool
 			string name = textBox2.Text;
 
 			string targetPath = textBox1.Text;
-			string[] originPaths = richTextBox1.Text.Split('\n');
+			string[] originPaths = richTextBox1.Text.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
 			ActionState overwriteState = radioButton1.Checked 
 				? ActionState.Yes
@@ -113,6 +113,8 @@ namespace SimpleBackUpTool
 			}
 
 			Settings.Save(settings, name);
+
+			Close();
 		}
 	}
 }

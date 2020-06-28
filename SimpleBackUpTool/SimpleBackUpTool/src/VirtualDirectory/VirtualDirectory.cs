@@ -1,8 +1,5 @@
-﻿
+﻿using Framework.Utils;
 using SimpleJsonLibrary;
-using System;
-using System.Drawing;
-using System.Runtime.Remoting.Contexts;
 
 namespace SimpleBackUpTool
 {
@@ -64,19 +61,72 @@ namespace SimpleBackUpTool
 
 			if (child.GetType() == typeof(VirtualDirectory))
 			{
-				VirtualDirectory childDirectory = (VirtualDirectory) child;
-				if (!childDirectory.SkipLast())
+				if(!(child as VirtualDirectory).SkipLast())
 				{
-					childDirectory.Clear();
+					DropElementAt(j);
 				}
+			}
+			else
+			{
+				DropElementAt(j);
 			}
 
 			return true;
 		}
 
-		public void Clear()
+		private void DropElementAt(int i)
 		{
-			Pointer = Children.Length;
+			// TODO: there's a neater way to do this.
+			Children = new VirtualDirectoryEntry[Children.Length - 1];
+			Children.Insert(0, Children.SubArray(0, i - 1));
+			Children.Insert(i + 1, Children.SubArray(i + 1, Children.Length - i - 1));
+		}
+	
+
+		public void UpdateChild(VirtualDirectoryEntry newChild)
+		{
+			for(int i = 0; i < this.Children.Length; i++)
+			{
+				VirtualDirectoryEntry entry = this.Children[i];
+				if (entry.Name == newChild.Name)
+				{
+					this.Children[i] = newChild;
+					return;
+				}
+			}
+
+			//TODO: this is underperformant.
+			VirtualDirectoryEntry[] newChildren = new VirtualDirectoryEntry[this.Children.Length + 1];
+			newChildren.Insert(0, this.Children);
+			newChildren[this.Children.Length] = newChild;
+			this.Children = newChildren;
+		}
+
+		public bool Contains(string name, out VirtualDirectoryEntry child)
+		{
+			foreach(VirtualDirectoryEntry entry in Children)
+			{
+				if(entry.Name == name)
+				{
+					child = entry;
+					return true;
+				}
+			}
+
+			child = null;
+			return false;
+		}
+
+		public bool Contains(string name)
+		{
+			foreach(VirtualDirectory entry in Children)
+			{
+				if(entry.Name == name)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 }

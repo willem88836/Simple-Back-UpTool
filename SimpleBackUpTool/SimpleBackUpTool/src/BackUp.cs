@@ -1,12 +1,8 @@
-﻿using Framework.Storage;
-using Framework.Utils;
+﻿using Framework.Utils;
 using SimpleJsonLibrary;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design.Serialization;
-using System.Drawing;
 using System.IO;
-using System.Linq;
+using System.Net.Configuration;
 
 namespace SimpleBackUpTool
 {
@@ -17,8 +13,6 @@ namespace SimpleBackUpTool
 		private BackUpSettings settings;
 		private ActionState overwriteState;
 		private ActionState skipState;
-
-		private VirtualDirectory virtualDirectory;
 
 
 		public void Start(BackUpSettings settings)
@@ -41,12 +35,17 @@ namespace SimpleBackUpTool
 				}
 			}
 
-
 			// TODO: when two origin folders have the same name all non-first ones are removed here because the names don't match the original.
+			foreach(string originDirectory in this.settings.OriginDirectories)
+			{
+				string targetDirectory = Path.Combine(this.settings.TargetDirectory, Path.GetFileName(originDirectory));
+				DirectoryUtilities.EnsureDirectory(targetDirectory);
 
-			LoadVirtualDirectory();
-			RemoveAbandonedFiles();
-			CreateBackUp();
+				VirtualDirectory virtualDirectory = LoadVirtualDirectory(targetDirectory);
+				virtualDirectory.Pointer = 0;
+				RemoveAbandonedFiles(originDirectory, virtualDirectory);
+				CreateBackUp(originDirectory, virtualDirectory);
+			}
 		}
 
 
@@ -54,168 +53,139 @@ namespace SimpleBackUpTool
 		///		Loads the virtual Directory from target directory. 
 		///		Ensures virtual directory file exists. 
 		/// </summary>
-		private void LoadVirtualDirectory()
+		private VirtualDirectory LoadVirtualDirectory(string targetDirectory)
 		{
-			string fullVirtualDirectoryPath = Path.Combine(this.settings.TargetDirectory, virtualDirectoryPath);
+			string fullVirtualDirectoryPath = Path.Combine(targetDirectory, virtualDirectoryPath);
 
 			if (!File.Exists(fullVirtualDirectoryPath))
 			{
 				LoggingUtilities.LogFormat("Virtual directory file not found, creating new one at: {0}", fullVirtualDirectoryPath);
-				FileStream stream = File.Create(fullVirtualDirectoryPath);
+				VirtualDirectory emptyVirtualDirectory = new VirtualDirectory()
+				{
+					Children = new VirtualDirectoryEntry[0],
+					Name = Path.GetFileName(targetDirectory)
+				};
+				string json = JsonUtility.ToJson(emptyVirtualDirectory);
+				File.WriteAllText(fullVirtualDirectoryPath, json);
 				File.SetAttributes(fullVirtualDirectoryPath, FileAttributes.Hidden);
-				stream.Close();
 			}
 
 			string virtualDirectoryJson = File.ReadAllText(fullVirtualDirectoryPath);
-			this.virtualDirectory = JsonUtility.FromJson<VirtualDirectory>(virtualDirectoryJson);
-			this.virtualDirectory.Pointer = 0;
+			VirtualDirectory virtualDirectory = JsonUtility.FromJson<VirtualDirectory>(virtualDirectoryJson);
+			virtualDirectory.Pointer = 0;
 			LoggingUtilities.LogFormat("Loaded virtual directory file: {0}", fullVirtualDirectoryPath);
+			return virtualDirectory;
 		}
 
 
 		/// <summary>
 		///		Removes all files that no longer are. 
 		/// </summary>
-		private void RemoveAbandonedFiles()
+		private void RemoveAbandonedFiles(string originPath, VirtualDirectory virtualDirectory)
 		{
-			while (this.virtualDirectory.HasNext())
+			originPath = Path.GetDirectoryName(originPath);
+			while (virtualDirectory.HasNext())
 			{
-				VirtualDirectoryEntry next = this.virtualDirectory.GetNext();
-				string originPath = Path.GetPathRoot(next.Name);
+				VirtualDirectoryEntry next = virtualDirectory.GetNext();
 
-				foreach(string originDirectory in this.settings.OriginDirectories)
-				{
-					string directoryName = Path.GetFileName(originDirectory);
-					if (directoryName == originPath)
-					{
-						originPath = originDirectory;
-						break;
-					}
-				}
+				string originFilePath = Path.Combine(originPath, next.Name);
 
-				originPath = Path.Combine(originPath, next.Name);
-
-				if (!File.Exists(originPath) && !Directory.Exists(originPath))
+				if (!File.Exists(originFilePath) && !Directory.Exists(originFilePath))
 				{
 					// remove the file.
 					string targetPath = Path.Combine(this.settings.TargetDirectory, next.Name);
 					Directory.Delete(targetPath, true);
 					// remove the entry from the virtual directory.
-					this.virtualDirectory.SkipLast();
+					virtualDirectory.SkipLast();
 				}
 			}
 		}
 
-		private void CreateBackUp()
+		private void CreateBackUp(
+			string originDirectory, // base directory.
+			VirtualDirectory virtualTargetDirectory) // base directory, no root. Note: settings.targetDir + targetDir == targetPath.
 		{
-			VirtualDirectory newVirtualDirectory = new VirtualDirectory()
-			{
-				Children = new VirtualDirectoryEntry[this.settings.OriginDirectories.Length]
-			};
-
-			for(int i = 0; i < this.settings.OriginDirectories.Length; i++)
-			{
-				string originDirectory = this.settings.OriginDirectories[i];
-				string originName = Path.GetFileName(originDirectory);
-				//string destinationDirectory = Path.Combine(this.settings.TargetDirectory, originName);
-
-				VirtualDirectory virtualDirectory = (VirtualDirectory) newVirtualDirectory.Children[i];
-				virtualDirectory.Name = originName;
-
-				this.virtualDirectory.Children[i] = virtualDirectory;
-
-				Copy(originDirectory, originName, virtualDirectory);
-			}
-
-			this.virtualDirectory = newVirtualDirectory;
+			CopyDirectories(originDirectory, virtualTargetDirectory);
+			CopyFiles(originDirectory, virtualTargetDirectory);
 		}
 
-		private void Copy(
-			string originDirectory,
-			string targetDirectory,
-			VirtualDirectory virtualDirectory)
+		private void CopyDirectories(string originDirectory, VirtualDirectory virtualTargetDirectory)
 		{
-			DirectoryUtilities.EnsureDirectory(targetDirectory);
-
 			string[] directories = Directory.GetDirectories(originDirectory);
-			
-			for(int i = 0; i < directories.Length; i++)
-			{
-				string destinationDirectory = Path.Combine(
-					targetDirectory,
-					Path.GetFileName(directories[i]));
 
+			// creates a virtual directory for each of the child directories. 
+			// recursively calls Copy() on each of them.
+			for (int i = 0; i < directories.Length; i++)
+			{
 				VirtualDirectory childDirectory = new VirtualDirectory()
 				{
-					Name = destinationDirectory
+					Name = Path.Combine(virtualTargetDirectory.Name, Path.GetFileName(directories[i]))
 				};
 
-				virtualDirectory.Children[i] = childDirectory;
+				string destinationDirectory = Path.Combine(this.settings.TargetDirectory, childDirectory.Name);
 
-				Copy(directories[i], destinationDirectory, childDirectory);
+				// the existence of all directories is ensured. 
+				if (!virtualTargetDirectory.Contains(childDirectory.Name))
+				{
+					Directory.CreateDirectory(destinationDirectory);
+				}
+
+				virtualTargetDirectory.UpdateChild(childDirectory);
+
+				CreateBackUp(directories[i], childDirectory);
 			}
+		}
 
+		//TODO: make this work with individual virtual directories as well. 
+		private void CopyFiles(string originDirectory, VirtualDirectory virtualTargetDirectory)
+		{
 			string[] files = Directory.GetFiles(originDirectory);
-
-
-
-
-
-			DirectoryUtilities.ForeachFolderAt(originDirectory, (string childDir) =>
-				Copy(childDir, Path.Combine(targetDirectory, Path.GetFileName(childDir))));
-
-			DirectoryUtilities.ForeachFileAt(originDirectory, (FileInfo file) =>
+			for (int i = 0; i < files.Length; i++)
 			{
-				// TODO: add sub folders to settings to autoskip (e.g. ".git" folders). 
-				string targetPath = Path.Combine(targetDirectory, file.Name);
+				string currentFile = files[i];
 
-				// if it's the same file, but a different version.
-				if (File.Exists(targetPath) && file.LastWriteTime != File.GetLastWriteTime(targetPath))
+				string fileName = Path.GetFileName(currentFile);
+				VirtualDirectoryEntry virtualFile;
+				if (virtualTargetDirectory.Contains(fileName, out virtualFile))
 				{
-					LoggingUtilities.LogFormat("DUPLICATE FILE: {0}\n", targetPath);
-
-					bool overwrite = overwriteState == ActionState.Yes;
-					if (overwriteState == ActionState.Unset)
+					FileInfo fileInfo = new FileInfo(currentFile);
+					if (virtualFile.LastModifiedOn != fileInfo.LastWriteTime)
 					{
-						overwrite = RequestActionState(ref overwriteState, "overwrite", targetPath);
+						string targetPath = Path.Combine(
+							this.settings.TargetDirectory,
+							virtualTargetDirectory.Name,
+							fileInfo.Name);
+
+						try
+						{
+							File.Copy(currentFile, targetPath, true);
+
+
+							FileAttributes attributes = File.GetAttributes(targetPath);
+							if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+							{
+								attributes = attributes & ~FileAttributes.ReadOnly;
+								File.SetAttributes(targetPath, attributes);
+							}
+						}
+						catch (Exception e)
+						{
+							LoggingUtilities.LogFormat("ERROR: {0} | {1}\n", e.GetType(), e.Message);
+							bool skip = skipState == ActionState.Yes;
+							if (skipState == ActionState.Unset)
+							{
+								skip = RequestActionState(ref skipState, string.Format("Can't reach file due to error ({0}). Skip", e.Message), targetPath);
+							}
+
+							if (skip)
+							{
+								LoggingUtilities.Log("Skipped\n");
+								return;
+							}
+						}
 					}
-
-					if (!overwrite)
-					{
-						LoggingUtilities.LogFormat("Skipped\n");
-						return;
-					}
-
-					LoggingUtilities.LogFormat("Overwritten\n");
 				}
-
-				try
-				{
-					File.Copy(file.FullName, targetPath, true);
-				}
-				catch (Exception e)
-				{
-					LoggingUtilities.LogFormat("ERROR: {0} | {1}\n", e.GetType(), e.Message);
-					bool skip = skipState == ActionState.Yes;
-					if (skipState == ActionState.Unset)
-					{
-						skip = RequestActionState(ref skipState, string.Format("Can't reach file due to error ({0}). Skip", e.Message), targetPath);
-					}
-
-					if (skip)
-					{
-						LoggingUtilities.Log("Skipped\n");
-						return;
-					}
-				}
-
-				FileAttributes attributes = File.GetAttributes(targetPath);
-				if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-				{
-					attributes = attributes & ~FileAttributes.ReadOnly;
-					File.SetAttributes(targetPath, attributes);
-				}
-			});
+			}
 		}
 
 
@@ -244,32 +214,6 @@ namespace SimpleBackUpTool
 
 			Console.WriteLine("Invalid Input");
 			return RequestActionState(ref state, e, path);
-		}
-
-		private string TestDirectoryName(
-			string originDirectory,
-			string targetDirectory,
-			ref Dictionary<string, int> processedDirectories)
-		{
-			string originDir = Path.GetFileName(originDirectory);
-
-
-			var keys = processedDirectories.Keys;
-
-			if (keys.Contains(originDir))
-			{
-				processedDirectories[originDir]++;
-				originDir = string.Format(
-					"{0} ({1}){2}",
-					Path.GetFileNameWithoutExtension(originDir),
-					processedDirectories[originDir],
-					Path.GetExtension(originDir));
-			}
-
-			processedDirectories.Add(originDir, 0);
-
-			originDir = Path.Combine(targetDirectory, originDir);
-			return originDir;
 		}
 	}
 }
